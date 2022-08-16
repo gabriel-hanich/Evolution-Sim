@@ -5,7 +5,15 @@
     },
     
     "prey": {
-        "preyCount": 100
+        "preyCount": 100,
+        "meanMaxHealth": 1,
+        "maxHealthVariation": 0.15,
+        "meanSpeed": 1,
+        "speedVariation": 0.15,
+        "meanMaxEnergy": 5,
+        "maxEnergyVariation": 0.15,
+        "meanSensingRange": 10,
+        "sensingRangeVariation": 2
     },
     "predator": {
         "predatorCount": 10
