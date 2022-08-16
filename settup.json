@@ -1,0 +1,13 @@
+{
+    "board": {
+        "boardSizeX": 100,
+        "boardSizeY": 100
+    },
+    
+    "prey": {
+        "preyCount": 100
+    },
+    "predator": {
+        "predatorCount": 10
+    }
+}
