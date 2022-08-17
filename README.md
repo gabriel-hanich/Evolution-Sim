@@ -4,9 +4,18 @@ Simulating Natural selection through a population of predators and prey
 Note - The frequency distribution between the mean and the variation is given by a Gaussian distribution
 
 # Meaning of Setup Parameters 
+
+## Sim
+- `length` - The number of 'turns' the sim has
+
 ## Board
 - `boardSizeX` - The width of the board the animals inhabit
 - `boardSizeY` - The height of the board
+
+## Food
+- `foodCount` - The number of food sources that spawn
+- `meanEnergy` - The mean amount of energy provided by a food sources
+- `energyVariation` - The variation of amount of energy provided
 
 ## Prey
 - `preyCount` - The number of prey that spawn at the start

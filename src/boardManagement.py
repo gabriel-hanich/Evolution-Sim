@@ -17,9 +17,11 @@ def plotBoard(board):
     for row in board:
         for item in row:
             if item != None:
-                color = "#48cf6c"
+                color = "#c7502c"
                 if type(item) == entities.prey:
                     color = "#4489cf"
+                if type(item) == entities.foodSource:
+                    color = "#48cf6c"
                 plt.scatter(item.position[0], item.position[1], color=color)
 
     plt.xlim(0, board.shape[0])
