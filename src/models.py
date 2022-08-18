@@ -1,3 +1,4 @@
+from fileinput import close
 import math
 
 class goal:
@@ -17,6 +18,22 @@ class entity:
         # Update the internally stored board
         self.board = board
         self.time = time
+    
+    def scanBoards(self):
+        # Find all the boxes within the entities sensing field
+        coords = []
+        for multiplier in [[-1, -1], [-1, 1], [1, -1], [1, 1]]: # Iterates through each of the 4 quadrants 
+            for xOffset in range(self.sensingRange + 1):
+                for yOffset in range(self.sensingRange + 1):
+                    currentPos = [self.pos[0] + multiplier[0] * xOffset, self.pos[1] + multiplier[1] * yOffset] # The current position being scanned
+                    distance = math.sqrt((self.pos[0] - currentPos[0]) ** 2 + (self.pos[1] - currentPos[1]) ** 2)
+                    if distance <= self.sensingRange: # If the location is within scanning distance
+                        try:
+                            self.board[currentPos[0]][currentPos[1]]
+                            coords.append(currentPos)
+                        except IndexError:
+                            pass
+        return coords
 
 class foodSource(entity):
     def __init__(self, id, startingPos, energyProvided):
@@ -42,17 +59,20 @@ class animal(entity):
 
 
 class prey(animal):
-    def moveToFood(self):
-        # Find all the boxes within the prey's sensing field
-        for multiplier in [[-1, -1], [-1, 1], [1, -1], [1, 1]]: # Iterates through each of the 4 quadrants 
-            for xOffset in range(self.sensingRange + 1):
-                for yOffset in range(self.sensingRange + 1):
-                    currentPos = [self.pos[0] + multiplier[0] * xOffset, self.pos[1] + multiplier[1] * yOffset] # The current position being scanned
-                    distance = math.sqrt((self.pos[0] - currentPos[0]) ** 2 + (self.pos[1] - currentPos[1]) ** 2)
-                    if distance <= self.sensingRange: # If the location is within scanning distance
-                        try:
-                            if type(self.board[currentPos[0]][currentPos[1]]) == foodSource:
-                                print(f"Found food {round(distance, 3)} blocks away, my speed is {round(self.speed, 3)}, It will take {math.ceil(distance / self.speed)} turns to get there")
-                                self.currentDecision = goal("move", self.time, self.time + math.ceil(distance / self.speed), currentPos)
-                        except IndexError:
-                            pass
+    # Decision making function
+    def findFood(self):
+        # Move to the closest food source 
+
+        coords = self.scanBoards()
+        # Find the closest food source
+        smallestDistance = self.sensingRange
+        closestSource = None
+        for position in coords:
+            if type(self.board[position[0]][position[1]]) == foodSource:
+                distance = math.sqrt((self.pos[0] - position[0]) ** 2 + (self.pos[1] - position[1]) ** 2)
+                if distance < smallestDistance:
+                    smallestDistance = distance
+                    closestSource = position
+        self.currentGoal = goal("move", self.time, (self.time + math.ceil(smallestDistance / self.speed)), closestSource)
+    
+    # Action functions
