@@ -2,6 +2,7 @@ from msilib.schema import Error
 import numpy as np
 import src.models as entities
 import src.boardManagement as boardState
+from src.mathFuncs import *
 import matplotlib.pyplot as plt
 import random
 import json 
@@ -37,10 +38,10 @@ for i in range(setup["prey"]["preyCount"]):
     prey = entities.prey(
         f"prey{i}",
         loc,
-        np.random.normal(setup["prey"]["meanMaxHealth"], setup["prey"]["maxHealthVariation"], 1)[0],
-        np.random.normal(setup["prey"]["meanSpeed"], setup["prey"]["speedVariation"], 1)[0],
-        np.random.normal(setup["prey"]["meanMaxEnergy"], setup["prey"]["maxEnergyVariation"], 1)[0],
-        round(np.random.normal(setup["prey"]["meanSensingRange"], setup["prey"]["sensingRangeVariation"], 1)[0])
+        findNormal(setup["prey"]["meanMaxHealth"], setup["prey"]["maxHealthVariation"]),
+        findNormal(setup["prey"]["meanSpeed"], setup["prey"]["speedVariation"]),
+        findNormal(setup["prey"]["meanMaxEnergy"], setup["prey"]["maxEnergyVariation"]),
+        round(findNormal(setup["prey"]["meanSensingRange"], setup["prey"]["sensingRangeVariation"])),
     )
     board[loc[0]][loc[1]] = prey
 
@@ -49,6 +50,19 @@ for i in range(setup["prey"]["preyCount"]):
 
 for turnCount in range(setup["sim"]["length"]):
     for prey in preyList:
-        prey.updateBoard(board, turnCount)
-        prey.moveToFood()
-    print(turnCount)
+        # Update animal's board
+        prey.updateConstants(board, turnCount)
+        
+        # Decision making
+        prey.findFood()
+
+        # Goal Execution
+        prey.executeGoal()
+        board = prey.getBoard()
+    x = 0
+    for row in board:
+        for point in row:
+            if type(point) == entities.prey:
+                x += 1  
+    boardState.plotBoard(board, False, f"./output/{turnCount}.png")
+    print(f"{turnCount} - {x} Prey")

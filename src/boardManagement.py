@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import src.models as entities
 
-def plotBoard(board):
+def plotBoard(board, showFig, outputPath):
     # Plots the location of all entities on the board on a graph
 
     # Create legend
@@ -28,7 +28,11 @@ def plotBoard(board):
     plt.ylim(0, board.shape[0])
     plt.title("Board status")
     plt.legend(handles=entityTypeLegend)
-    plt.show()
+    if showFig:
+        plt.show()
+    else:
+        plt.savefig(outputPath)
+        plt.close()
 
 def findBlankSpaces(board):
     # Returns a list of any squares that are empty

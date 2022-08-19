@@ -1,6 +1,6 @@
 {
     "sim": {
-        "length": 20
+        "length": 5
     },
     "board": {
         "boardSizeX": 100,

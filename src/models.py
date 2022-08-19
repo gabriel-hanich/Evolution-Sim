@@ -1,5 +1,7 @@
 from fileinput import close
 import math
+from turtle import pos, speed
+from src.mathFuncs import *
 
 class goal:
     def __init__(self, type, startTime, endTime, endLocation):
@@ -10,30 +12,23 @@ class goal:
 
 class entity:
     def __init__(self, id, startingPos):
+        self.board = None
         self.position = startingPos
         self.id = id        
         self.time = 0
 
-    def updateBoard(self, board, time):
-        # Update the internally stored board
+    def updateConstants(self, board, time):
+        # Update the internally constants
         self.board = board
         self.time = time
+
+    def getBoard(self):
+        # Get the board 
+        return self.board
     
     def scanBoards(self):
         # Find all the boxes within the entities sensing field
-        coords = []
-        for multiplier in [[-1, -1], [-1, 1], [1, -1], [1, 1]]: # Iterates through each of the 4 quadrants 
-            for xOffset in range(self.sensingRange + 1):
-                for yOffset in range(self.sensingRange + 1):
-                    currentPos = [self.pos[0] + multiplier[0] * xOffset, self.pos[1] + multiplier[1] * yOffset] # The current position being scanned
-                    distance = math.sqrt((self.pos[0] - currentPos[0]) ** 2 + (self.pos[1] - currentPos[1]) ** 2)
-                    if distance <= self.sensingRange: # If the location is within scanning distance
-                        try:
-                            self.board[currentPos[0]][currentPos[1]]
-                            coords.append(currentPos)
-                        except IndexError:
-                            pass
-        return coords
+        return findCircleInteriorPoints(self.position, self.sensingRange, list(self.board.shape))
 
 class foodSource(entity):
     def __init__(self, id, startingPos, energyProvided):
@@ -44,7 +39,7 @@ class foodSource(entity):
 class animal(entity):
     def __init__(self, id, startingPos, maxHealth, speed, maxEnergy, sensingRange):
         self.id = id        
-        self.pos = startingPos # Where the animal starts on the board (in form [x, y])
+        self.position = startingPos # Where the animal starts on the board (in form [x, y])
         self.health = maxHealth # Assume that the animal starts with 100% health
         self.maxHealth = maxHealth # The maximum health score an animal can have
         self.speed = speed # How many boxes the animal can move per turn
@@ -57,22 +52,51 @@ class animal(entity):
         self.time = 0
         self.efficiency = round(math.log(self.speed / 3) + 1, 3)
 
+    def executeGoal(self):
+        # Execute the current goal for the animal
+        if self.currentGoal != None:
+            if self.currentGoal.type == "move":
+                # Calculate the distance of the move
+                distance = findDistance(self.position, self.currentGoal.endPos)
+                if distance < self.speed: # If the animal can move to the location in one turn
+                    currentMoveTarget = self.currentGoal.endPos
+                else:
+                    # Find a point that is on the way between the current position and the end location 
+                    smallestEndDistance = 1000 
+                    for i in range(math.floor(self.speed)):
+                        points = findCircleInteriorPoints(self.position, self.speed - i, list(self.board.shape))
+                        for point in points:
+                            pointOccupier = self.board[point[0]][point[1]]
+                            if pointOccupier == None or type(pointOccupier) == foodSource:
+                                endDistance = findDistance(point, self.currentGoal.endPos)
+                                if endDistance < smallestEndDistance:
+                                    smallestEndDistance = endDistance
+                                    currentMoveTarget = point
+                        if smallestEndDistance < distance:
+                            break
+
+                self.board[self.position[0]][self.position[1]] = None
+                self.board[currentMoveTarget[0]][currentMoveTarget[1]] = self
+                self.position = currentMoveTarget
+                 
+                if self.position == self.currentGoal.endPos:
+                    self.currentGoal = None
 
 class prey(animal):
-    # Decision making function
+    # Decision making functions
     def findFood(self):
         # Move to the closest food source 
-
         coords = self.scanBoards()
         # Find the closest food source
         smallestDistance = self.sensingRange
         closestSource = None
         for position in coords:
             if type(self.board[position[0]][position[1]]) == foodSource:
-                distance = math.sqrt((self.pos[0] - position[0]) ** 2 + (self.pos[1] - position[1]) ** 2)
+                distance = findDistance(self.position, position)
                 if distance < smallestDistance:
                     smallestDistance = distance
                     closestSource = position
-        self.currentGoal = goal("move", self.time, (self.time + math.ceil(smallestDistance / self.speed)), closestSource)
+        if closestSource != None:
+            self.currentGoal = goal("move", self.time, (self.time + math.ceil(smallestDistance / self.speed)), closestSource)
     
-    # Action functions
+    
