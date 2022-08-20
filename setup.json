@@ -13,12 +13,8 @@
     },
     "prey": {
         "preyCount": 50,
-        "meanMaxHealth": 1,
-        "maxHealthVariation": 0.15,
         "meanSpeed": 5,
         "speedVariation": 1,
-        "meanMaxEnergy": 5,
-        "maxEnergyVariation": 0.15,
         "meanSensingRange": 10,
         "sensingRangeVariation": 2
     },
