@@ -31,3 +31,14 @@ for i in range(setup["prey"]["preyCount"]):
     )
     board.setEntity(prey, loc)
     preyList.append(prey)
+
+
+turnIcons = ["|", "/", "|", "\\"]
+priorLoadingStr = ""
+
+for turnNumber in range(setup["sim"]["length"]):
+    for prey in preyList:
+        if prey.currentGoal == None:
+            prey.findNearestFoodSource()
+
+    print(f"\r{turnIcons[turnNumber % len(turnIcons)]} Loading {round((turnNumber + 1) / setup['sim']['length'], 3) * 100}%", end="") # Print loading info

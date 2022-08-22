@@ -30,5 +30,5 @@ Both health and energy are values between 0 and 1, with 1 being full and 0 being
 
 # Formula for traits
 ## Prey
-- Efficiency = log(speed / 3) + 1
+- Efficiency = log(speed + 1) / 15
 - Energy Cost from movement = distance * (3 - Efficiency)
