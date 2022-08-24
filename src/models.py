@@ -1,4 +1,5 @@
 from re import search
+import re
 from src.mathFuncs import *
 import math
 import matplotlib.pyplot as plt
@@ -29,13 +30,18 @@ class animal(entity):
         self.sensingRange = sensingRange
 
         self.movementCost = round((math.log(self.speed + 1) / 15), 3) # How much energy it costs to move 1 square
-        self.currentGoal = None
+        self.goalList = []
 
     def updateVitals(self):
         # Update the energy of the animal,
         # Called at the start of every turn
         self.energy -= self.movementCost
         self.updateTurn()
+        if self.energy <= 0:
+            self.board.removeEntityFromLocation(self.position)
+            return False
+        else:
+            return True
     
     def move(self, newPosition):
         distance = findDistance(self.position, newPosition)
@@ -46,43 +52,73 @@ class animal(entity):
             self.energy -= distance * self.movementCost
             self.position = newPosition
 
-    def executeGoal(self) -> None:
-        if self.currentGoal == None:
-            return
+    def planMove(self, goal):
+        # Move animal between two points, at the maximum possible distance allowed by the energy and speed restrictions
         biggestMove = math.floor(self.energy / self.movementCost) # The farthest possible distance the animal can go
-        print(f"The furthest i can move is {biggestMove} with {self.energy} energy")
         if biggestMove > self.speed:
             biggestMove = self.speed
-        if(self.currentGoal.type == "move"):
-            # Move animal 
-            endTurnPos = [] # The position the animal will be at the end of the turn
-            if findDistance(self.position, self.currentGoal.endPosition) >= biggestMove:
-                endTurnPos = self.currentGoal.endPosition
-                self.currentGoal = None
-                print("ON")
-            else:
-                smallestDistance = findDistance([0, 0], self.board.getShape())
-                # Find the closest point to the end destination that is within the range an animal can move in a turn
-                for point in findCircleInteriorPoints(self.position, biggestMove, self.board.getShape()):
-                    if self.board.getEntity(point) == None:
-                        distance = findDistance(point, self.currentGoal.endPosition)
-                        if distance < biggestMove:
-                            smallestDistance = distance 
-                            endTurnPos = point
-            if self.board.getEntity(endTurnPos) != None and endTurnPos != []:
-                # If the end turn position has an object on it, find a free space that is adgacent
-                print("RELOCATING")
-                for xOffset in [-1, 0, 1]:
-                    for yOffset in [-1, 0, 1]:
-                        coordinate = [endTurnPos[0] + xOffset, endTurnPos[1] + yOffset]
-                        point = self.board.getEntity(coordinate) 
-                        if point == None and findDistance(self.position, coordinate) <= biggestMove:
-                                endTurnPos = coordinate
-                                break
-                                break
-                
-            self.move(endTurnPos)
-                            
+        endTurnPos = [] # The position the animal will be at the end of the turn
+        if findDistance(self.position, goal.endPosition) <= biggestMove:
+            endTurnPos = goal.endPosition
+            self.goalList.pop(0)
+        else:
+            smallestDistance = findDistance([0, 0], self.board.getShape())
+            # Find the closest point to the end destination that is within the range an animal can move in a turn
+            for point in findCircleInteriorPoints(self.position, biggestMove, self.board.getShape()):
+                if self.board.getEntity(point) == None:
+                    distance = findDistance(point, goal.endPosition)
+                    if distance < biggestMove:
+                        smallestDistance = distance 
+                        endTurnPos = point
+        if(endTurnPos == []):
+            return # If no suitable location could be found, don't move at all
+
+        if self.board.getEntity(endTurnPos) != None:
+            # If the end turn position has an object on it, find a free space that is adgacent
+            foundPos = False
+            for xOffset in [-1, 0, 1]:
+                for yOffset in [-1, 0, 1]:
+                    coordinate = [endTurnPos[0] + xOffset, endTurnPos[1] + yOffset]
+                    point = self.board.getEntity(coordinate) 
+                    distance = findDistance(self.position, coordinate)
+                    if point == None and distance <= biggestMove:
+                            foundPos = True
+                            endTurnPos = coordinate
+                            break
+                if endTurnPos:
+                    break
+            if not foundPos:
+                endTurnPos = self.position
+        self.move(endTurnPos)
+    
+    def eat(self, target) -> None:
+        # Eat the food that is one square away from the prey
+        if findDistance(self.position, target) > 1.5: # Ensure the food is close enough to eat
+            self.goalList.insert(0, goal("move", self.currentTurn, self.position, math.ceil(findDistance(self.position, target) / self.speed), target))
+            return
+        else:
+            plant = self.board.getEntity(target)
+            try:
+                self.energy += plant.energy
+                if self.energy > 1:
+                    self.energy = 1
+                self.board.removeEntityFromLocation(target)
+            except AttributeError:
+                pass
+            self.goalList.pop(0)
+
+
+    def executeGoal(self) -> None:
+        if self.goalList == []:
+            return
+
+        goal = self.goalList[0]
+        if goal.type == "move":
+            self.planMove(goal)
+        elif goal.type == "eat":
+            self.eat(goal.endPosition)        
+
+
 class prey(animal):
     def __init__(self, id, position, board, speed, sensingRange) -> None:
         super().__init__(id, position, board, speed, sensingRange)
@@ -98,8 +134,8 @@ class prey(animal):
                     closestBoard = position
                     smallestDistance = findDistance(self.position, position)
         if closestBoard != []:
-            self.currentGoal = goal("move", self.currentTurn, self.position, math.ceil(smallestDistance / self.speed), closestBoard)
-
+            self.goalList.append(goal("move", self.currentTurn, self.position, math.ceil(smallestDistance / self.speed), closestBoard))
+            self.goalList.append(goal("eat", math.ceil(smallestDistance / self.speed), closestBoard, math.ceil(smallestDistance / self.speed) + 1, closestBoard))
 
 class board:
     def __init__(self, xSize, ySize) -> None:
@@ -132,7 +168,7 @@ class board:
     def removeEntityFromLocation(self, location) -> None:
         # Remove an entity from a location on the board
         if self.board[location[0]][location[1]] == None:
-            raise Exception(f"REMOVE ENTITY ERROR\nAttempting to delete entity at location {location}. Nothing is at that location")
+            print(f"REMOVE ENTITY ERROR\nAttempting to delete entity at location {location}. Nothing is at that location")
         else:
             self.board[location[0]][location[1]] = None
 
@@ -140,7 +176,7 @@ class board:
     def moveEntity(self, entity, oldLocation, newLocation) -> None:
         # Move a board from location to another
         if self.board[oldLocation[0]][oldLocation[1]] == None:
-            raise Exception(f"MOVE ENTITY ERROR\nThere is no entity at old location {oldLocation}\n This occured whilst trying to move entity {entity.id}")
+            print(f"MOVE ENTITY ERROR\nThere is no entity at old location {oldLocation}\n This occured whilst trying to move entity {entity.id}")
         else:
             self.removeEntityFromLocation(oldLocation)
             self.setEntity(entity, newLocation)

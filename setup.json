@@ -8,8 +8,8 @@
     },
     "food": {
         "foodCount": 80,
-        "meanEnergy": 3,
-        "energyVariation": 1
+        "meanEnergy": 0.75,
+        "energyVariation": 0.15
     },
     "prey": {
         "preyCount": 50,

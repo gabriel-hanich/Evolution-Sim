@@ -1,7 +1,12 @@
+import string
 import src.models as entities
 from src.mathFuncs import *
 import random
+import time
 import json
+
+startTime = time.time()
+print(f"Initialising sim to run")
 
 with open("./setup.json", "r", encoding="utf-8") as setupFile:
     setup = json.load(setupFile)
@@ -33,14 +38,33 @@ for i in range(setup["prey"]["preyCount"]):
     preyList.append(prey)
 
 
-turnIcons = ["|", "/", "|", "\\"]
-priorLoadingStr = ""
+turnIcons = ["|", "/", "-", "\\"]
+# Output data to be saved as .csv 
+outputData = np.empty([setup["sim"]["length"] + 1, 3]) 
+# outputData[0] = ["Turn Number", "Number of prey", "Average prey energy"]
 
 for turnNumber in range(setup["sim"]["length"]):
+    for preyIndex, prey in enumerate(preyList):
+        if not prey.updateVitals():
+            preyList.pop(preyIndex)
+        else:
+            if prey.goalList == []:
+                prey.findNearestFoodSource()
+            prey.executeGoal()
+    
+    trackVal = 0
     for prey in preyList:
-        prey.updateVitals()
-        if prey.currentGoal == None:
-            prey.findNearestFoodSource()
-        prey.executeGoal()
+        trackVal += prey.energy
+
     board.plotBoard(False, f"./output/{turnNumber}.png")
+    outputData[turnNumber][0] = turnNumber
+    outputData[turnNumber][1] = len(preyList)
+    outputData[turnNumber][2] = trackVal / len(preyList)
+    if len(preyList) == 0:
+        outputData[1] = 0
+        break
+
     print(f"\r{turnIcons[turnNumber % len(turnIcons)]} Loading {round((turnNumber + 1) / setup['sim']['length'], 3) * 100}%", end="") # Print loading info
+np.savetxt("./output/dataOut.csv", outputData, delimiter=",")
+print(outputData)
+print(f"\nDone! generated {turnNumber + 1} days in {round((time.time() - startTime), 3)} seconds")
