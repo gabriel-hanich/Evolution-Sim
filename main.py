@@ -38,7 +38,9 @@ priorLoadingStr = ""
 
 for turnNumber in range(setup["sim"]["length"]):
     for prey in preyList:
+        prey.updateVitals()
         if prey.currentGoal == None:
             prey.findNearestFoodSource()
-
+        prey.executeGoal()
+    board.plotBoard(False, f"./output/{turnNumber}.png")
     print(f"\r{turnIcons[turnNumber % len(turnIcons)]} Loading {round((turnNumber + 1) / setup['sim']['length'], 3) * 100}%", end="") # Print loading info
