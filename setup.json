@@ -1,15 +1,17 @@
 {
     "sim": {
-        "length": 5
+        "length": 150,
+        "breedTurns": 6
     },
     "board": {
         "boardSizeX": 100,
         "boardSizeY": 100
     },
     "food": {
-        "foodCount": 80,
+        "foodCount": 100,
         "meanEnergy": 0.75,
-        "energyVariation": 0.15
+        "energyVariation": 0.15,
+        "spawnThreshold": 0.75
     },
     "prey": {
         "preyCount": 50,

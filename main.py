@@ -1,9 +1,24 @@
+from pyexpat import model
 import string
+from tkinter import N
+from tkinter.messagebox import NO
 import src.models as entities
 from src.mathFuncs import *
 import random
 import time
 import json
+
+
+def spawnFood(count, setup, board) -> None:
+    for i in range(count):
+        locations = board.getEmptyPlaces()
+        loc = locations[random.randint(0, len(locations) - 1)]
+        food = entities.foodSource(f"foodSource{i}",
+            loc,
+            board,
+            round(findNormal(setup["food"]["meanEnergy"], setup["food"]["energyVariation"])))
+        board.setEntity(food, loc)
+
 
 startTime = time.time()
 print(f"Initialising sim to run")
@@ -13,22 +28,15 @@ with open("./setup.json", "r", encoding="utf-8") as setupFile:
 
 board = entities.board(setup["board"]["boardSizeX"], setup["board"]["boardSizeY"])
 
-preyList = []
-foodList = []
-for i in range(setup["food"]["foodCount"]):
-    locations = board.getEmptyPlaces()
-    loc = locations[random.randint(0, len(locations) - 1)]
-    food = entities.foodSource(f"foodSource{i}",
-        loc,
-        board,
-        round(findNormal(setup["food"]["meanEnergy"], setup["food"]["energyVariation"])))
-    board.setEntity(food, loc)
-    foodList.append(food)
 
+spawnFood(setup["food"]["foodCount"], setup, board)
+
+preyList = []
 for i in range(setup["prey"]["preyCount"]):
     locations = board.getEmptyPlaces()
     loc = locations[random.randint(0, len(locations) - 1)]
-    prey = entities.prey(f"prey{i+1}", 
+    prey = entities.prey(
+        f"prey{i+1}", 
         loc,
         board,
         round(findNormal(setup["prey"]["meanSpeed"], setup["prey"]["speedVariation"]), 4),
@@ -40,7 +48,7 @@ for i in range(setup["prey"]["preyCount"]):
 
 turnIcons = ["|", "/", "-", "\\"]
 # Output data to be saved as .csv 
-outputData = np.empty([setup["sim"]["length"] + 1, 3]) 
+outputData = np.empty([setup["sim"]["length"] + 1, 4]) 
 # outputData[0] = ["Turn Number", "Number of prey", "Average prey energy"]
 
 for turnNumber in range(setup["sim"]["length"]):
@@ -51,20 +59,53 @@ for turnNumber in range(setup["sim"]["length"]):
             if prey.goalList == []:
                 prey.findNearestFoodSource()
             prey.executeGoal()
-    
+
+    foodCount = 0
+    for row in range(board.getShape()[0]):
+        for column in range(board.getShape()[1]):
+            if type(board.getEntity([row, column])) == entities.foodSource:
+                foodCount += 1
+
+    if foodCount < setup["food"]["foodCount"] * setup["food"]["spawnThreshold"]:
+        spawnFood(round(setup["food"]["foodCount"] * (1 - setup["food"]["spawnThreshold"])), setup, board)
+
     trackVal = 0
     for prey in preyList:
         trackVal += prey.energy
 
+    breedCount = 0
+    if (turnNumber + 1) % setup["sim"]["breedTurns"] == 0: # Breed the prey every n turns
+        print("\nSTARTING BREEDING")
+        currentPreyList = preyList.copy()
+        for preyIndex, prey in enumerate(currentPreyList):
+            if prey.energy >= 0.5: # If the animal has over 0.5 energy
+                breedCount += 1
+                positions = board.getEmptyPlaces()
+                pos = positions[random.randint(0, len(positions) - 1)]
+                speed = round(findNormal(prey.speed, setup["prey"]["speedVariation"]), 4)
+                if speed < 1:
+                    speed = 1
+                newPrey = entities.prey(
+                    f"prey{setup['prey']['preyCount'] + preyIndex}",
+                    pos,
+                    board,
+                    speed,
+                    round(findNormal(prey.sensingRange, setup["prey"]["sensingRangeVariation"]), 4)
+                )    
+                preyList.append(newPrey)
+                board.setEntity(newPrey, pos)
+
+    
     board.plotBoard(False, f"./output/{turnNumber}.png")
     outputData[turnNumber][0] = turnNumber
     outputData[turnNumber][1] = len(preyList)
-    outputData[turnNumber][2] = trackVal / len(preyList)
+    outputData[turnNumber][3] = breedCount
     if len(preyList) == 0:
-        outputData[1] = 0
+        outputData[turnNumber][2] = 0
         break
+    else:
+        outputData[turnNumber][2] = trackVal / len(preyList)
 
-    print(f"\r{turnIcons[turnNumber % len(turnIcons)]} Loading {round((turnNumber + 1) / setup['sim']['length'], 3) * 100}%", end="") # Print loading info
+    print(f"\r{turnIcons[turnNumber % len(turnIcons)]} Loading {round((turnNumber + 1) / setup['sim']['length'], 3) * 100}% - Population - {len(preyList)}", end="") # Print loading info
 np.savetxt("./output/dataOut.csv", outputData, delimiter=",")
-print(outputData)
 print(f"\nDone! generated {turnNumber + 1} days in {round((time.time() - startTime), 3)} seconds")

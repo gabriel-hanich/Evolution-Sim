@@ -29,7 +29,7 @@ class animal(entity):
         self.speed = speed
         self.sensingRange = sensingRange
 
-        self.movementCost = round((math.log(self.speed + 1) / 15), 3) # How much energy it costs to move 1 square
+        self.movementCost = round((math.log(self.speed + 1) / 20), 3) # How much energy it costs to move 1 square
         self.goalList = []
 
     def updateVitals(self):
@@ -156,19 +156,19 @@ class board:
         return self.board[searchPosition[0]][searchPosition[1]]
     
     def getShape(self) -> list:
-        return list(self.board.shape)
+        return list([self.board.shape[0] - 1, self.board.shape[1] - 1])
     # Setters
     def setEntity(self, entity, location) -> None:
         # Set an entity to a specific location on the board
         if self.board[location[0]][location[1]] != None:
-            raise Exception(f"SET ENTITY ERROR\nThere is already an entity at location {location}\nThis occured when you were setting entity {entity.id}")
+            raise Exception(f"\nSET ENTITY ERROR\nThere is already an entity at location {location}\nThis occured when you were setting entity {entity.id}")
         else:
             self.board[location[0]][location[1]] = entity
 
     def removeEntityFromLocation(self, location) -> None:
         # Remove an entity from a location on the board
         if self.board[location[0]][location[1]] == None:
-            print(f"REMOVE ENTITY ERROR\nAttempting to delete entity at location {location}. Nothing is at that location")
+            print(f"\nREMOVE ENTITY ERROR\nAttempting to delete entity at location {location}. Nothing is at that location")
         else:
             self.board[location[0]][location[1]] = None
 
@@ -176,7 +176,7 @@ class board:
     def moveEntity(self, entity, oldLocation, newLocation) -> None:
         # Move a board from location to another
         if self.board[oldLocation[0]][oldLocation[1]] == None:
-            print(f"MOVE ENTITY ERROR\nThere is no entity at old location {oldLocation}\n This occured whilst trying to move entity {entity.id}")
+            print(f"\nMOVE ENTITY ERROR\nThere is no entity at old location {oldLocation}\n This occured whilst trying to move entity {entity.id}")
         else:
             self.removeEntityFromLocation(oldLocation)
             self.setEntity(entity, newLocation)
