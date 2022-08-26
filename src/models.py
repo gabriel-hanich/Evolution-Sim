@@ -23,19 +23,20 @@ class foodSource(entity):
         self.energy = energy
 
 class animal(entity):
-    def __init__(self, id, position, board, speed, sensingRange) -> None:
+    def __init__(self, id, position, board, speed, sensingRange, dayCost) -> None:
         super().__init__(id, position, board)
         self.energy = 1
         self.speed = speed
         self.sensingRange = sensingRange
+        self.dayCost = dayCost
 
-        self.movementCost = round((math.log(self.speed + 1) / 20), 3) # How much energy it costs to move 1 square
+        self.movementCost = round((math.log(self.speed + self.sensingRange) / 40), 3) # How much energy it costs to move 1 square
         self.goalList = []
 
-    def updateVitals(self):
+    def updateVitals(self) -> None:
         # Update the energy of the animal,
         # Called at the start of every turn
-        self.energy -= self.movementCost
+        self.energy -= self.movementCost * self.dayCost
         self.updateTurn()
         if self.energy <= 0:
             self.board.removeEntityFromLocation(self.position)
@@ -120,8 +121,8 @@ class animal(entity):
 
 
 class prey(animal):
-    def __init__(self, id, position, board, speed, sensingRange) -> None:
-        super().__init__(id, position, board, speed, sensingRange)
+    def __init__(self, id, position, board, speed, sensingRange, dayCost) -> None:
+        super().__init__(id, position, board, speed, sensingRange, dayCost)
     
     def findNearestFoodSource(self):
         # Find the nearest food source and create a goal to reach it

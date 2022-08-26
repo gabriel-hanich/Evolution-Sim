@@ -5,20 +5,23 @@
     },
     "board": {
         "boardSizeX": 100,
-        "boardSizeY": 100
+        "boardSizeY": 100,
+        "fullThreshold": 0.75
     },
     "food": {
-        "foodCount": 100,
-        "meanEnergy": 0.75,
+        "foodCount": 40,
+        "meanEnergy": 0.65,
         "energyVariation": 0.15,
-        "spawnThreshold": 0.75
+        "spawnThreshold": 0.65
     },
     "prey": {
-        "preyCount": 50,
+        "preyCount": 40,
         "meanSpeed": 5,
         "speedVariation": 1,
+        "dayCost": 1.3,
         "meanSensingRange": 10,
-        "sensingRangeVariation": 2
+        "sensingRangeVariation": 2,
+        "breedThreshold": 0.52
     },
     "predator": {
         "predatorCount": 10
