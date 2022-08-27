@@ -1,5 +1,3 @@
-from re import search
-import re
 from src.mathFuncs import *
 import math
 import matplotlib.pyplot as plt
@@ -25,6 +23,11 @@ class foodSource(entity):
 class animal(entity):
     def __init__(self, id, position, board, speed, sensingRange, dayCost) -> None:
         super().__init__(id, position, board)
+        if speed < 1:
+            speed = 1
+        if sensingRange < 1:
+            sensingRange = 1
+        
         self.energy = 1
         self.speed = speed
         self.sensingRange = sensingRange
@@ -111,13 +114,23 @@ class animal(entity):
 
     def executeGoal(self) -> None:
         if self.goalList == []:
-            return
+            return {"success": False, "goalType": None, "other": None}
 
+        success = False
+        other = None
         goal = self.goalList[0]
         if goal.type == "move":
             self.planMove(goal)
+            success = True
         elif goal.type == "eat":
             self.eat(goal.endPosition)        
+            success = True
+        elif goal.type == "eatprey":
+            eatResults = self.eatPrey()
+            if eatResults["success"]:
+                success = True
+                other = eatResults["prey"]
+        return {"success": success, "goalType": goal.type, "other": other}
 
 
 class prey(animal):
@@ -141,6 +154,33 @@ class prey(animal):
 class predator(animal):
     def __init__(self, id, position, board, speed, sensingRange, dayCost) -> None:
         super().__init__(id, position, board, speed, sensingRange, dayCost)
+        self.movementCost = self.movementCost / 2 # Predators can move twice as efficiently
+
+    def findNearestFoodSource(self):
+        # Find the nearest food source and create a goal to reach it
+        nearbyPlaces = findCircleInteriorPoints(self.position, self.sensingRange, self.board.getShape())
+        smallestDistance = findDistance([0, 0], self.board.getShape())
+        closestBoard = []
+        for position in nearbyPlaces:
+            if type(self.board.getEntity(position)) == foodSource:
+                if findDistance(self.position, position) < smallestDistance:
+                    closestBoard = position
+                    smallestDistance = findDistance(self.position, position)
+        if closestBoard != []:
+            self.goalList.append(goal("move", self.currentTurn, self.position, math.ceil(smallestDistance / self.speed), closestBoard))
+            self.goalList.append(goal("eatprey", math.ceil(smallestDistance / self.speed), closestBoard, math.ceil(smallestDistance / self.speed) + 1, closestBoard))
+
+    def eatPrey(self):
+        points = findCircleInteriorPoints(self.position, self.speed, self.board.getShape())
+        for point in points:
+            entity = self.board.getEntity(point)
+            if type(entity) == prey:
+                self.energy += entity.energy
+                self.board.removeEntityFromLocation(point)
+                self.board.moveEntity(self, self.position, point)
+                self.position = point
+                return {"success": True, "prey": entity}
+        return {"success": False, "prey": None}
 
 class board:
     def __init__(self, xSize, ySize) -> None:

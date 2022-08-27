@@ -1,10 +1,10 @@
 {
     "sim": {
-        "length": 200,
+        "length": 150,
         "breedTurns": 6
     },
     "valChange": {
-        "doChange": true,
+        "doChange": false,
         "changeTurns": 10,
         "keyCategory": "food",
         "key": "foodCount",
@@ -31,12 +31,12 @@
         "breedThreshold": 0.52
     },
     "predator": {
-        "predatorCount": 10,
-        "meanSpeed": 7,
+        "predatorCount": 20,
+        "meanSpeed": 5,
         "speedVariation": 1,
-        "dayCost": 1,
-        "meanSensingRange": 12,
+        "dayCost": 1.5,
+        "meanSensingRange": 5,
         "sensingRangeVariation": 3,
-        "breedThreshold": 0.54
+        "breedThreshold": 0.52
     }
 }
