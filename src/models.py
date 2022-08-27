@@ -138,6 +138,10 @@ class prey(animal):
             self.goalList.append(goal("move", self.currentTurn, self.position, math.ceil(smallestDistance / self.speed), closestBoard))
             self.goalList.append(goal("eat", math.ceil(smallestDistance / self.speed), closestBoard, math.ceil(smallestDistance / self.speed) + 1, closestBoard))
 
+class predator(animal):
+    def __init__(self, id, position, board, speed, sensingRange, dayCost) -> None:
+        super().__init__(id, position, board, speed, sensingRange, dayCost)
+
 class board:
     def __init__(self, xSize, ySize) -> None:
         self.board = np.empty([xSize, ySize], entity)
@@ -169,7 +173,8 @@ class board:
     def removeEntityFromLocation(self, location) -> None:
         # Remove an entity from a location on the board
         if self.board[location[0]][location[1]] == None:
-            print(f"\nREMOVE ENTITY ERROR\nAttempting to delete entity at location {location}. Nothing is at that location")
+            pass
+            # print(f"\nREMOVE ENTITY ERROR\nAttempting to delete entity at location {location}. Nothing is at that location")
         else:
             self.board[location[0]][location[1]] = None
 
@@ -177,7 +182,8 @@ class board:
     def moveEntity(self, entity, oldLocation, newLocation) -> None:
         # Move a board from location to another
         if self.board[oldLocation[0]][oldLocation[1]] == None:
-            print(f"\nMOVE ENTITY ERROR\nThere is no entity at old location {oldLocation}\n This occured whilst trying to move entity {entity.id}")
+            pass
+            # print(f"\nMOVE ENTITY ERROR\nThere is no entity at old location {oldLocation}\n This occured whilst trying to move entity {entity.id}")
         else:
             self.removeEntityFromLocation(oldLocation)
             self.setEntity(entity, newLocation)
@@ -200,6 +206,8 @@ class board:
                         color = "#4489cf"
                     if type(item) == foodSource:
                         color = "#48cf6c"
+                    if type(item) == predator:
+                        color = "#d4243e"
                     plt.scatter(item.position[0], item.position[1], color=color)
 
         plt.xlim(0, self.board.shape[0])

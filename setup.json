@@ -1,7 +1,14 @@
 {
     "sim": {
-        "length": 150,
+        "length": 200,
         "breedTurns": 6
+    },
+    "valChange": {
+        "doChange": true,
+        "changeTurns": 10,
+        "keyCategory": "food",
+        "key": "foodCount",
+        "changeAmount": 4
     },
     "board": {
         "boardSizeX": 100,
@@ -24,6 +31,12 @@
         "breedThreshold": 0.52
     },
     "predator": {
-        "predatorCount": 10
+        "predatorCount": 10,
+        "meanSpeed": 7,
+        "speedVariation": 1,
+        "dayCost": 1,
+        "meanSensingRange": 12,
+        "sensingRangeVariation": 3,
+        "breedThreshold": 0.54
     }
 }

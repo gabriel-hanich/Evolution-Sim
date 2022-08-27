@@ -1,9 +1,6 @@
-from pyexpat import model
-import string
-from tkinter import N
-from tkinter.messagebox import NO
 import src.models as entities
 from src.mathFuncs import *
+import matplotlib.pyplot as plt
 import random
 import time
 import json
@@ -46,11 +43,24 @@ for i in range(setup["prey"]["preyCount"]):
     board.setEntity(prey, loc)
     preyList.append(prey)
 
+predatorList = []
+for i in range(setup["predator"]["predatorCount"]):
+    locations = board.getEmptyPlaces()
+    loc = locations[random.randint(0, len(locations) - 1)]
+    predator = entities.predator(
+        f"predator{i}", 
+        loc, 
+        board,
+        round(findNormal(setup["predator"]["meanSpeed"], setup["predator"]["speedVariation"]), 4),
+        round(findNormal(setup["predator"]["meanSensingRange"], setup["predator"]["sensingRangeVariation"]), 4),
+        setup["predator"]["dayCost"]
+        )
+    predatorList.append(predator)
+    board.setEntity(predator, loc)
 
 turnIcons = ["|", "/", "-", "\\"]
 # Output data to be saved as .csv 
 outputData = np.empty([setup["sim"]["length"] + 1, 5]) 
-# outputData[0] = ["Turn Number", "Number of prey", "Average prey energy"]
 
 for turnNumber in range(setup["sim"]["length"]):
     # Actuate the prey
@@ -113,7 +123,12 @@ for turnNumber in range(setup["sim"]["length"]):
         print(f"\nBoard has reached level deemed 'full' at turn {turnNumber}")
         break
 
-    # board.plotBoard(False, f"./output/{turnNumber}.png")
+    # Change setup values if configured to do so
+    if setup["valChange"]["doChange"]:
+        if (turnNumber + 1) % setup["valChange"]["changeTurns"] == 0:
+            setup[setup["valChange"]["keyCategory"]][setup["valChange"]["key"]] += setup["valChange"]["changeAmount"]
+
+    # Record data 
     outputData[turnNumber][0] = turnNumber
     outputData[turnNumber][1] = len(preyList)
     outputData[turnNumber][4] = breedCount
@@ -123,9 +138,16 @@ for turnNumber in range(setup["sim"]["length"]):
         outputData[turnNumber][2] = 0
         break
     else:
-        outputData[turnNumber][3] = totalPreySense / len(preyList)
         outputData[turnNumber][2] = totalPreySpeed / len(preyList)
+        outputData[turnNumber][3] = totalPreySense / len(preyList)
 
-    print(f"\r{turnIcons[turnNumber % len(turnIcons)]} Loading {round((turnNumber + 1) / setup['sim']['length'], 3) * 100}% - Population - {len(preyList)}  ", end="") # Print loading info
+    board.plotBoard(True, f"./output/{turnNumber}.png")
+    print(f"\r{turnIcons[turnNumber % len(turnIcons)]} Loading {round(((turnNumber + 1) / setup['sim']['length']) * 100, 3) }% - Population - {len(preyList)}  ", end="") # Print loading info
 np.savetxt("./output/dataOut.csv", outputData, delimiter=",")
 print(f"\nDone! generated {turnNumber + 1} days in {round((time.time() - startTime), 3)} seconds")
+
+# Plot stuff
+plt.plot(outputData[:, 2], label="Speed")
+plt.plot(outputData[:, 3], label="Sense")
+plt.legend()
+plt.show()
