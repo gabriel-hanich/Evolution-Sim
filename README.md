@@ -30,6 +30,7 @@ Note - The frequency distribution between the mean and the variation is given by
 ## Prey
 Both health and energy are values between 0 and 1, with 1 being full and 0 being empty (duh)
 - `preyCount` - **int** - The number of prey that spawn at the start
+- `initEnergy` - **decimal** - The amount of energy prey will spawn with
 - `meanSpeed` - **float** - The mean of the speed value a prey will have
 - `speedVariation` - **float** How much the speed value will be varied
 - `dayCost` - **float** - How strongly prey is penalized at the start of each day
@@ -39,6 +40,7 @@ Both health and energy are values between 0 and 1, with 1 being full and 0 being
 
 ## Predators
 - `predatorCount` - **int** - The number of predators that spawn at the start
+- `initEnergy` - **decimal** - The amount of energy prey will spawn with
 - `meanSpeed` - **float** - The mean of the speed value a predator will have at the start
 - `speedVariation` - **float** - How much the speed value will be varied
 - `dayCost` - **float** - How strongly prey is penalized at the start of each day

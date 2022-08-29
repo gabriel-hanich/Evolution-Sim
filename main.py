@@ -38,7 +38,8 @@ for i in range(setup["prey"]["preyCount"]):
         board,
         round(findNormal(setup["prey"]["meanSpeed"], setup["prey"]["speedVariation"]), 4),
         round(findNormal(setup["prey"]["meanSensingRange"], setup["prey"]["sensingRangeVariation"]), 4),
-        setup["prey"]["dayCost"]
+        setup["prey"]["dayCost"],
+        setup["prey"]["initEnergy"]
     )
     board.setEntity(prey, loc)
     preyList.append(prey)
@@ -53,7 +54,8 @@ for i in range(setup["predator"]["predatorCount"]):
         board,
         round(findNormal(setup["predator"]["meanSpeed"], setup["predator"]["speedVariation"]), 4),
         round(findNormal(setup["predator"]["meanSensingRange"], setup["predator"]["sensingRangeVariation"]), 4),
-        setup["predator"]["dayCost"]
+        setup["predator"]["dayCost"],
+        setup["predator"]["initEnergy"]
         )
     predatorList.append(predator)
     board.setEntity(predator, loc)
@@ -64,7 +66,7 @@ turnIcons = ["|", "/", "-", "\\"]
 preyOutputData = np.empty([setup["sim"]["length"], 5]) 
 predatorOutputData = np.empty([setup["sim"]["length"], 5]) 
 
-extinctionAlert = False # If the extinction alert has been printed about predators
+extinctionAlert = {"prey" :False, "predator": False} # If the extinction alert has been printed about predators
 
 for turnNumber in range(setup["sim"]["length"]):
     # Actuate the prey
@@ -110,7 +112,7 @@ for turnNumber in range(setup["sim"]["length"]):
         # Breed Prey
         currentPreyList = preyList.copy()
         for preyIndex, prey in enumerate(currentPreyList):
-            if prey.energy >= setup["prey"]["breedThreshold"]: # If the animal has enough energy to breed
+            if prey.energy >= setup["prey"]["breedThreshold"] and prey.age > setup["sim"]["breedTurns"]: # If the animal has enough energy to breed
                 preyBreedCount += 1
                 positions = board.getEmptyPlaces()
                 pos = positions[random.randint(0, len(positions) - 1)]
@@ -120,7 +122,8 @@ for turnNumber in range(setup["sim"]["length"]):
                     board,
                     round(findNormal(prey.speed, setup["prey"]["speedVariation"]), 4),
                     round(findNormal(prey.sensingRange, setup["prey"]["sensingRangeVariation"]), 4),
-                    setup["prey"]["dayCost"]
+                    setup["prey"]["dayCost"],
+                    setup["prey"]["initEnergy"]
                 )    
                 preyList.append(newPrey)
                 board.setEntity(newPrey, pos)
@@ -128,7 +131,7 @@ for turnNumber in range(setup["sim"]["length"]):
         # Breed Predators
         currentPredatorList = predatorList.copy()
         for predatorIndex, predator in enumerate(currentPredatorList):
-            if predator.energy >= setup["predator"]["breedThreshold"]:
+            if predator.energy >= setup["predator"]["breedThreshold"] and predator.age > setup["sim"]["breedTurns"]:
                 predatorBreedCount += 1
                 locations = board.getEmptyPlaces()
                 loc = locations[random.randint(0, len(locations) - 1)]
@@ -138,8 +141,11 @@ for turnNumber in range(setup["sim"]["length"]):
                     board,
                     round(findNormal(predator.speed, setup["predator"]["speedVariation"]), 4),
                     round(findNormal(predator.sensingRange, setup["predator"]["sensingRangeVariation"]), 4),
-                    setup["predator"]["dayCost"]
+                    setup["predator"]["dayCost"],
+                    setup["predator"]["initEnergy"]
                     )
+                predatorList.append(newPredator)
+                board.setEntity(newPredator, loc)
 
     # Check to see if the board is too 'full'
     freeLoc = len(board.getEmptyPlaces())
@@ -176,31 +182,35 @@ for turnNumber in range(setup["sim"]["length"]):
     predatorOutputData[turnNumber][4] = predatorBreedCount
 
     if len(preyList) == 0:
-        print(f"\nThere are no more prey left at turn {turnNumber}")
+        if not extinctionAlert["prey"]:
+            print(f"\nThere are no more prey left at turn {turnNumber}")
+            extinctionAlert["prey"] = True
         preyOutputData[turnNumber][3] = 0
         preyOutputData[turnNumber][2] = 0
-        break
+        # break
     else:
         preyOutputData[turnNumber][2] = totalPreySpeed / len(preyList)
         preyOutputData[turnNumber][3] = totalPreySense / len(preyList)
 
     if len(predatorList) == 0:
-        if not extinctionAlert:
+        if not extinctionAlert["predator"]:
             print(f"\nPredators extinct at turn {turnNumber}")
-            extinctionAlert = True
+            extinctionAlert["predator"] = True
         predatorOutputData[turnNumber][3] = 0
         predatorOutputData[turnNumber][2] = 0
     else:
         predatorOutputData[turnNumber][2] = totalPredatorSpeed / len(predatorList)
         predatorOutputData[turnNumber][3] = totalPredatorSense / len(predatorList)
 
-    print(f"\r{turnIcons[turnNumber % len(turnIcons)]} Loading {round(((turnNumber + 1) / setup['sim']['length']) * 100, 3) }% - Population - {len(preyList)}  ", end="") # Print loading info
+    print(f"\r{turnIcons[turnNumber % len(turnIcons)]} Loading {round(((turnNumber + 1) / setup['sim']['length']) * 100, 3) }%", end="") # Print loading info
+    print(f" | Prey Population - {len(preyList)}  | Predator Population - {len(predatorList)} |", end="") # Print loading info
 np.savetxt("./output/preyData.csv", preyOutputData, delimiter=",")
 np.savetxt("./output/predatorData.csv", predatorOutputData, delimiter=",")
 print(f"\nDone! generated {turnNumber + 1} days in {round((time.time() - startTime), 3)} seconds")
 
 # Plot stuff
-plt.plot(predatorOutputData[:, 2], label="Speed")
-plt.plot(predatorOutputData[:, 3], label="Sense")
+# plt.plot(predatorOutputData[:, 2], label="Speed")
+plt.plot(predatorOutputData[:, 1], label="Population")
+plt.plot(predatorOutputData[:, 4], label="Birth Rate")
 plt.legend()
 plt.show()

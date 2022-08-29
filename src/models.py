@@ -10,10 +10,10 @@ class entity:
         self.id = id
         self.position = position
         self.board = board
-        self.currentTurn = 0
+        self.age = 0
     
     def updateTurn(self):
-        self.currentTurn += 1
+        self.age += 1
 
 class foodSource(entity):
     def __init__(self, id, position, board, energy) -> None:
@@ -21,14 +21,14 @@ class foodSource(entity):
         self.energy = energy
 
 class animal(entity):
-    def __init__(self, id, position, board, speed, sensingRange, dayCost) -> None:
+    def __init__(self, id, position, board, speed, sensingRange, dayCost, initEnergy) -> None:
         super().__init__(id, position, board)
         if speed < 1:
             speed = 1
         if sensingRange < 1:
             sensingRange = 1
         
-        self.energy = 1
+        self.energy = initEnergy
         self.speed = speed
         self.sensingRange = sensingRange
         self.dayCost = dayCost
@@ -98,7 +98,7 @@ class animal(entity):
     def eat(self, target) -> None:
         # Eat the food that is one square away from the prey
         if findDistance(self.position, target) > 1.5: # Ensure the food is close enough to eat
-            self.goalList.insert(0, goal("move", self.currentTurn, self.position, math.ceil(findDistance(self.position, target) / self.speed), target))
+            self.goalList.insert(0, goal("move", self.age, self.position, math.ceil(findDistance(self.position, target) / self.speed), target))
             return
         else:
             plant = self.board.getEntity(target)
@@ -134,8 +134,8 @@ class animal(entity):
 
 
 class prey(animal):
-    def __init__(self, id, position, board, speed, sensingRange, dayCost) -> None:
-        super().__init__(id, position, board, speed, sensingRange, dayCost)
+    def __init__(self, id, position, board, speed, sensingRange, dayCost, initEnergy) -> None:
+        super().__init__(id, position, board, speed, sensingRange, dayCost, initEnergy)
     
     def findNearestFoodSource(self):
         # Find the nearest food source and create a goal to reach it
@@ -148,13 +148,13 @@ class prey(animal):
                     closestBoard = position
                     smallestDistance = findDistance(self.position, position)
         if closestBoard != []:
-            self.goalList.append(goal("move", self.currentTurn, self.position, math.ceil(smallestDistance / self.speed), closestBoard))
+            self.goalList.append(goal("move", self.age, self.position, math.ceil(smallestDistance / self.speed), closestBoard))
             self.goalList.append(goal("eat", math.ceil(smallestDistance / self.speed), closestBoard, math.ceil(smallestDistance / self.speed) + 1, closestBoard))
 
 class predator(animal):
-    def __init__(self, id, position, board, speed, sensingRange, dayCost) -> None:
-        super().__init__(id, position, board, speed, sensingRange, dayCost)
-        self.movementCost = self.movementCost / 2 # Predators can move twice as efficiently
+    def __init__(self, id, position, board, speed, sensingRange, dayCost, initEnergy) -> None:
+        super().__init__(id, position, board, speed, sensingRange, dayCost, initEnergy)
+        self.movementCost = self.movementCost / 1.5 # Predators can move 1.5 times as efficiently
 
     def findNearestFoodSource(self):
         # Find the nearest food source and create a goal to reach it
@@ -167,7 +167,7 @@ class predator(animal):
                     closestBoard = position
                     smallestDistance = findDistance(self.position, position)
         if closestBoard != []:
-            self.goalList.append(goal("move", self.currentTurn, self.position, math.ceil(smallestDistance / self.speed), closestBoard))
+            self.goalList.append(goal("move", self.age, self.position, math.ceil(smallestDistance / self.speed), closestBoard))
             self.goalList.append(goal("eatprey", math.ceil(smallestDistance / self.speed), closestBoard, math.ceil(smallestDistance / self.speed) + 1, closestBoard))
 
     def eatPrey(self):
