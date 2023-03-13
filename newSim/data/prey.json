@@ -1,0 +1,14 @@
+{
+    "efficiency": {
+        "mean": 0.5,
+        "deviance": 0.25
+    },
+    "senseRange": {
+        "mean": 10,
+        "deviance": 2
+    },
+    "moveRange": {
+        "mean": 4,
+        "deviance": 2
+    }
+}

@@ -1,0 +1,18 @@
+{
+    "general": {
+        "periods": 10,
+        "preyCount": 10,
+        "predatorCount": 15,
+        "startingFoodCount": 15,
+        "foodReplenish": 10
+    },
+    "board": {
+        "boardX": 100,
+        "boardY": 100
+    },
+    "graph":{
+        "foodColor": "#48cf6c",
+        "preyColor": "#4489cf",
+        "predatorColor": "#d4243e"
+    }
+}
